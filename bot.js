@@ -21,7 +21,7 @@ var livingMafia = 2; // number of live mafia players
 var livingTown = 3; // number of live town players
 var alreadyIn = false; // check if the user is already in the game
 client.on('error', console.error); // Error catching - not sure if this even works but I haven't got an error recently when I used to get them after the bot ran for a while
-var timer = 1440; //time for each day in minutes.
+var gameTimer = 1440; //time for each day in minutes.
 
 //log in
 client.on('ready', () => {
@@ -133,7 +133,7 @@ client.on('message', msg => {
 			if (isNaN(amount)) {
 				return message.reply('that doesn\'t seem to be a valid number.');
 			} else if ((amount >= 0) && (amount <= 4320)) {
-				timer = args;
+				gameTimer = args;
 				msg.channel.send("the timer is now set for " + args + " minute(s).");
 			} else {
 				msg.channel.send("no");
@@ -222,7 +222,7 @@ client.on('message', msg => {
 					}
 					msg.channel.send('players:');
 					msg.channel.send(players);
-					timer = setTimeout(function(){ endDay(msg.channel.id) }, timer * 60000);
+					timer = setTimeout(function(){ endDay(msg.channel.id) }, gameTimer * 60000);
 					setTimeout(function(){msg.channel.send("15 seconds have passed")}, 15000);
 					gameStarted = true;
 				}
@@ -364,7 +364,7 @@ client.on('message', msg => {
 							citDead = false;
 						}
 						msg.channel.send('The next day begins')
-						timer = setTimeout(function(){ endDay(msg.channel.id) }, timer * 60000);
+						timer = setTimeout(function(){ endDay(msg.channel.id) }, gameTimer * 60000);
 					}
 				}
 			}
