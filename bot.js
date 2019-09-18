@@ -30,7 +30,7 @@ client.on('ready', () => {
 
 client.on('message', msg => {
 	
-	if (msg.content.startsWith('/playerlist') && gameStarted === true) {
+	if (msg.content.startsWith('/playerlist')) {
 		msg.channel.send("current playerlist: " + players); 
 	}
 	
