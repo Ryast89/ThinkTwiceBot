@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
-const auth = require('./auth.json');
+//const auth = require('./auth.json');
 var players = ["empty", "empty", "empty", "empty", "empty"] // stores player usernames. TO BE REMOVED
 var roles = ["citizen", "citizen", "citizen", "mafioso", "godfather"] // all possible roles.
 var players2 = [
