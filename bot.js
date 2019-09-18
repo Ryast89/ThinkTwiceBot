@@ -1,18 +1,17 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const auth = require('./auth.json');
-var players = ["empty", "empty", "empty", "empty", "empty"]
-const fs = require('fs');
-var roles = ["citizen", "citizen", "citizen", "mafioso", "godfather"]
+var players = ["empty", "empty", "empty", "empty", "empty"] // stores player usernames. TO BE REMOVED
+var roles = ["citizen", "citizen", "citizen", "mafioso", "godfather"] // all possible roles.
 var players2 = [
 ["empty", "role"], ["empty", "role"], ["empty", "role"], ["empty", "role"], ["empty", "role"]
-];
-var players3;
+]; // stores players and roles.
+var players3; // original playerlist. Currently not in use, will be used to display roles aftr game ends
 
 var votes = [
 ["empty", "vote"], ["empty", "vote"], ["empty", "vote"], ["empty", "vote"], ["empty", "vote"]
-];
-var voter = 0; // number of player voting
+]; // tracks the votes of living players
+var voter = -1; // number of player voting
 var livingPlayers = 5; // number of live players
 var gameStarted = false; // if the game has started or not
 var markedPlayer = 0; // the player number of the citizen who dies on the first day
@@ -22,6 +21,7 @@ var livingMafia = 2; // number of live mafia players
 var livingTown = 3; // number of live town players
 var alreadyIn = false; // check if the user is already in the game
 client.on('error', console.error); // Error catching - not sure if this even works but I haven't got an error recently when I used to get them after the bot ran for a while
+var timer = 1440; //time for each day in minutes.
 
 //log in
 client.on('ready', () => {
@@ -33,9 +33,9 @@ client.on('message', msg => {
 	// vote
 	if (msg.content.startsWith('/vote') && gameStarted === true) {
 		try {
-			var args = msg.content.slice(5).split(' ,');
-			var user1 = msg.author.id
-			var mentions = msg.mentions.users.first().id;
+			var args = msg.content.slice(5).split(' ,'); // the contents of the message after the /vote
+			var user1 = msg.author.id // the author of the voting message
+			var mentions = msg.mentions.users.first().id; // the user that is mentioned in the vote
 			
 			for(i = 0; i < players.length; i++) {
 				if(players2[i][0] === user1) {
@@ -44,18 +44,23 @@ client.on('message', msg => {
 				}
 			}
 			
-			for(i = 0; i < players.length; i++) {
+			if(voter !== -1) {
+				for(i = 0; i < players.length; i++) {
 
-				if(players2[i][0] === mentions ) {
-					msg.channel.send(msg.author + ' voted for ' + args)
-					votes[voter][1] = mentions
+					if(players2[i][0] === mentions ) {
+						msg.channel.send(msg.author + ' voted for ' + args)
+						votes[voter][1] = mentions
+					}
+				
 				}
-			
+			} else {
+				msg.channel.send('You are either not in the game, or dead. Don\'t vote and don\'t talk please!');
 			}
 			
-			if(votes[voter][1] !== mentions) {
+			if(voter != -1 && votes[voter][1] !== mentions) {
 				msg.channel.send(args + ' is not in this game.');
 			}
+			voter = -1;
 		} catch {
 			msg.channel.send('You must tag the player you\'re voting.');
 		}
@@ -82,11 +87,13 @@ client.on('message', msg => {
   
 	// votecount
 	if (msg.content.startsWith('/vc') && gameStarted === true) {
+		var output = "";
 		for(i = 0; i < players2.length; i++) {
 			try {
-				msg.channel.send(client.users.get(votes[i][0]).username + ' is voting for ' + client.users.get(votes[i][1]).username);
+				output += client.users.get(votes[i][0]).username + ' is voting for ' + client.users.get(votes[i][1]).username + "\n";
 			} catch {}
 		}
+		msg.channel.send(output);
 		
 		// vote tally
 		try {
@@ -118,6 +125,25 @@ client.on('message', msg => {
 	} else if(msg.content.startsWith('/vc') && gameStarted === false) {
 		  msg.channel.send("This game has not started yet.");
 	}
+	
+	if (msg.content.startsWith('/settime') && gameStarted === false) {
+		try {
+			var args = msg.content.slice(8).split(' ,');
+			const amount = parseInt(args[0]);
+			if (isNaN(amount)) {
+				return message.reply('that doesn\'t seem to be a valid number.');
+			} else if ((amount >= 0) && (amount <= 4320)) {
+				timer = args;
+				msg.channel.send("the timer is now set for " + args + " minute(s).");
+			} else {
+				msg.channel.send("no");
+			}
+		} catch {
+			msg.channel.send("no");
+		}
+	}
+		
+	
 	// out
 	if (msg.content.startsWith('/out') && gameStarted === false) {
 		try {
@@ -134,7 +160,7 @@ client.on('message', msg => {
 	} else if(msg.content.startsWith('/out') && gameStarted === false) {
 		msg.channel.send('the game already started. Too late!');
 	}
-  
+
 	//in
 	if (msg.content.startsWith('/in') && gameStarted === false) {
 		try {
@@ -154,53 +180,56 @@ client.on('message', msg => {
 						break;
 					} else {
 						msg.channel.send('you are already in this game, ' + user1);
-						alreadyIn = false;
 						break;
 					}
 				}
 			}
-			for(i = 0; i < players2.length; i++) {
-				if(players2[i][0] === "empty" && alreadyIn === false) {
-					players2[i][0] = msg.author.id;
-					break;
-				}else if(players2[i][0] === "empty" && alreadyIn === true) {
-					break;
-				}
-			}
-			if(players[4] !== "empty") {
-				msg.channel.send('The game is full! Please wait 15 seconds before talking. (or don\'t, I can\'t stop you)');
-				players3 = players2;
-				for(i = 0; i < players.length;) {
-					var rng = Math.floor(Math.random()*5);
-					if(players2[rng][1] === "role") {
-						players2[rng][1] = roles[i]
-						i++
+			if(alreadyIn === false) {
+				for(i = 0; i < players2.length; i++) {
+					if(players2[i][0] === "empty") {
+						players2[i][0] = msg.author.id;
+						break;
+					}else if(players2[i][0] === "empty" && alreadyIn === true) {
+						break;
 					}
 				}
-				for(i = 0; i < 5; i++) {
-					if(players2[i][1] === "citizen") {
-						client.users.get(players2[i][0]).send("You are a Citizen! you win when the godfather is dead. If you are lynched on day 1, you will not die until the end of the following day.");
-					} else if(players2[i][1] === "mafioso") {
-						for(j = 0; j < players.length; j++) {
-							if (players2[j][1] === "godfather") {
-								client.users.get(players2[i][0]).send("You are a Mafioso! you win when the mafia has parity with the town. You will lose if the godfather is lynched. Your godfather is " + players[j]);
-							}
+				if(players[4] !== "empty") {
+					msg.channel.send('The game is full! Please wait 15 seconds before talking. (or don\'t, I can\'t stop you)');
+					players3 = players2;
+					for(i = 0; i < players.length;) {
+						var rng = Math.floor(Math.random()*5);
+						if(players2[rng][1] === "role") {
+							players2[rng][1] = roles[i]
+							i++
 						}
-					} else if(players2[i][1] === "godfather") {
-						for(j = 0; j < players.length; j++) {
-							if (players2[j][1] === "mafioso") {
-								client.users.get(players2[i][0]).send("You are a Godfather! you win when the mafia has parity with the town. You will lose if you are lynched. Your mafioso is " + players[j]);
+					}
+					for(i = 0; i < 5; i++) {
+						if(players2[i][1] === "citizen") {
+							client.users.get(players2[i][0]).send("You are a Citizen! you win when the godfather is dead. If you are lynched on day 1, you will not die until the end of the following day.");
+						} else if(players2[i][1] === "mafioso") {
+							for(j = 0; j < players.length; j++) {
+								if (players2[j][1] === "godfather") {
+									client.users.get(players2[i][0]).send("You are a Mafioso! you win when the mafia has parity with the town. You will lose if the godfather is lynched. Your godfather is " + players[j]);
+								}
+							}
+						} else if(players2[i][1] === "godfather") {
+							for(j = 0; j < players.length; j++) {
+								if (players2[j][1] === "mafioso") {
+									client.users.get(players2[i][0]).send("You are a Godfather! you win when the mafia has parity with the town. You will lose if you are lynched. Your mafioso is " + players[j]);
+								}
 							}
 						}
 					}
+					msg.channel.send('players:');
+					msg.channel.send(players);
+					timer = setTimeout(function(){ endDay(msg.channel.id) }, timer * 60000);
+					setTimeout(function(){msg.channel.send("15 seconds have passed")}, 15000);
+					gameStarted = true;
 				}
-				msg.channel.send('players:');
-				msg.channel.send(players);
-				timer = setTimeout(function(){ endDay(msg.channel.id) }, 300000);
-				setTimeout(function(){msg.channel.send("15 seconds have passed")}, 15000);
-				gameStarted = true;
+			} else {
+				alreadyIn = false;
 			}
-		}catch {}
+		} catch {}
 	} else if(msg.content.startsWith('/in') && gameStarted === true) {
 		msg.channel.send("This game has already started.");
 	}
@@ -211,7 +240,7 @@ client.on('message', msg => {
 		"but there are a few things you can do.\n-/help: Well, you just used it. I send you this message.\n" +
 		"-/in: Join the current game. The game will start when there is five players.\n-/vote [tag]: vote" +
 		"for the user you tag.\n-/unvote: unvote the player you're currently voting.\n-/vc: call a votecount.\n" +
-		"-/clear: clear the current game.\n\nIf I'm not doing anything, I'm probably powered off or broken." +
+		"-/clear: clear the current game.\n-/settime (time): set the timer of the next game in minutes. The number of minutes in 24 hours is 1440 (this is also the default value)\n \nIf I'm not doing anything, I'm probably powered off or broken." +
 		"Let Ryast know :)\n\nDo be patient with me, because sometimes it takes a while to send a message!")
 	  }
   
@@ -335,7 +364,7 @@ client.on('message', msg => {
 							citDead = false;
 						}
 						msg.channel.send('The next day begins')
-						timer = setTimeout(function(){ endDay(msg.channel.id) }, 300000);
+						timer = setTimeout(function(){ endDay(msg.channel.id) }, timer * 60000);
 					}
 				}
 			}
@@ -361,6 +390,7 @@ client.on('message', msg => {
 		timer;
 		livingMafia = 2;
 		livingTown = 3;
+		timer = 1440;
 
 	}
 });
