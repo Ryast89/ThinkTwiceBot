@@ -136,7 +136,7 @@ client.on('message', msg => {
 			const amount = parseInt(args[0]);
 			if (isNaN(amount)) {
 				return message.reply('that doesn\'t seem to be a valid number.');
-			} else if ((amount >= 0) && (amount <= 4320)) {
+			} else if ((amount >= 1) && (amount <= 4320)) {
 				gameTimer = args;
 				msg.channel.send("the timer is now set for " + args + " minute(s).");
 			} else {
