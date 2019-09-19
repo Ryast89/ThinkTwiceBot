@@ -301,7 +301,15 @@ client.on('message', msg => {
 			 
 			}
 			if(tallyOutput !== "") {
-				msg.channel.send(tallyOutput);
+				try {
+					msg.channel.send(tallyOutput);
+				} catch {
+					try {
+						console.log("tallyOutput was: -->" + tallyOutput + "<--");
+					} catch {
+						msg.channel.send("ok, something REALLY broke.");
+					}
+				}
 				if(mostVoted.includes(" ")) {
 					msg.channel.send("uh-oh, that's a rand. Choosing a random player with " + mostVotes + ' votes.');
 					var mostVoteds = mostVoted.split(" ");
