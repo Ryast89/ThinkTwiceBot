@@ -22,6 +22,8 @@ var livingTown = 3; // number of live town players
 var alreadyIn = false; // check if the user is already in the game
 client.on('error', console.error); // Error catching - not sure if this even works but I haven't got an error recently when I used to get them after the bot ran for a while
 var gameTimer = 1440; //time for each day in minutes.
+var userClearing = "";
+var clearingTimer
 
 //log in
 client.on('ready', () => {
@@ -152,11 +154,11 @@ client.on('message', msg => {
 	if (msg.content.startsWith('/out') && gameStarted === false) {
 		try {
 			const user1 = msg.member.user.tag
-			msg.channel.send(msg.author + ' left the game!');
 			for(i = 0; i < players.length; i++) {
 				if(players[i] === user1) {	
 					players[i] = "empty";
 					players2[i][0] = "empty";
+					msg.channel.send(msg.author + ' left the game!');
 					break;
 				}
 			}
@@ -250,8 +252,17 @@ client.on('message', msg => {
   
 	// clear
 	if (msg.content.startsWith('/clear')) {
-		clear();
-		msg.channel.send('cleared.');
+		if(userClearing === "") {
+			msg.channel.send("clearing is now a two person job. Get somebody else to also /clear in the next 10 seconds, and the bot will clear the game.");
+			userClearing = msg.author.id;
+			clearingTimer = setTimeout(function(){userClearing = ""; msg.channel.send("Clear not reached.")}, 10000);
+		}
+		if(msg.author.id !== userClearing) {
+			clear();
+			msg.channel.send('cleared.');
+			userClearing = "";
+			clearTimeout(clearingTimer);
+		}
 	}
   
 	// unvote
@@ -321,6 +332,7 @@ client.on('message', msg => {
 						if(players2[i][1] === "godfather") {
 							msg.channel.send('their role was ' + players2[i][1] + '!');
 							msg.channel.send('Town has won!\nPlayers & roles (will be fixed):\n' + players3);
+							clear();
 							break;
 						} else if(players2[i][1] === "mafioso") {
 							msg.channel.send('their role was ' + players2[i][1]);			
@@ -352,7 +364,8 @@ client.on('message', msg => {
 							livingPlayers--;
 							livingTown--;
 							if(livingMafia >= livingTown) {
-								msg.channel.send("Mafia has achieved parity. The mafia wins! (just IDs rn, will be fixed)\nPlayers and roles:\n" + players)
+								msg.channel.send("Mafia has achieved parity. The mafia wins! (just IDs rn, will be fixed)\nPlayers and roles:\n" + players);
+								clear();
 								break;
 							}
 						}
