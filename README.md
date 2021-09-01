@@ -1,6 +1,6 @@
 # ThinkTwiceBot
 
-**ThinkTwiceBot is no longer being worked on. This is the non-database version of the bot, and is designed to work with glitch.com hosting. The bot will not save information, and is not designed to play longer games as info will be lost when it restarts.
+**ThinkTwiceBot is no longer being worked on. This is the non-database version of the bot, and is designed to work with glitch.com hosting. The bot will not save information, and is not designed to play longer games as info will be lost when it restarts.**
 
 This is a discord bot to play a mafia variant called Think Twice<br/><br/>
 
